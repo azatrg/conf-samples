@@ -1,0 +1,83 @@
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+-N EXTERNAL_SIP_TRUNK
+-N INNER_SIP
+
+#Internal network
+-A INNER_SIP -s 192.168.30.0/24 -j ACCEPT
+-A INNER_SIP -s 192.168.33.0/24 -j ACCEPT
+-A INNER_SIP -j RETURN
+
+#tattelecom
+-A EXTERNAL_SIP_TRUNK -s 89.232.125.48 -j ACCEPT
+-A EXTERNAL_SIP_TRUNK -s 89.232.125.148 -j ACCEPT
+-A EXTERNAL_SIP_TRUNK -j RETURN
+
+##############################################################################33
+
+####
+#### Iptables customization 
+####
+
+##################### Security
+# Block sync
+-A INPUT -p tcp ! --syn -m state --state NEW  -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Drop Sync "
+-A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+# Block Fragments
+-A INPUT -f -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Fragments Packets "
+-A INPUT -f -j DROP
+
+# Block bad stuff
+-A INPUT -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+-A INPUT -p tcp --tcp-flags ALL ALL -j DROP
+
+# Block NULL packets
+-A INPUT -p tcp --tcp-flags ALL NONE -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "NULL Packets "
+-A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+
+-A INPUT -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+# Block XMAS
+-A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "XMAS Packets "
+-A INPUT -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+# FIN packet scans
+-A INPUT -p tcp --tcp-flags FIN,ACK FIN -m limit --limit 5/m --limit-burst 7 -j LOG --log-level 4 --log-prefix "Fin Packets Scan "
+-A INPUT -p tcp --tcp-flags FIN,ACK FIN -j DROP
+
+# IP spoofing
+-A INPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m state --state NEW -j LOG --log-level 4 --log-prefix "Maybe spoofing "
+-A INPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m state --state NEW -j REJECT --reject-with tcp-reset
+##################### End of security
+#### Rules for icmp
+-N ICMP_PACKETS
+-A ICMP_PACKETS -p ICMP -s 0/0 --icmp-type 8 -j ACCEPT
+-A ICMP_PACKETS -p ICMP -s 0/0 --icmp-type 11 -j ACCEPT
+-A ICMP_PACKETS -p ICMP -j DROP
+
+
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ICMP_PACKETS
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22001 -j ACCEPT
+
+
+# SIP
+-A INPUT -p tcp -m tcp --dport 5060 -m state --state NEW -j INNER_SIP
+-A INPUT -p udp -m udp --dport 5060 -m state --state NEW -j INNER_SIP
+-A INPUT -p udp -m udp --dport 5060 -m state --state NEW -j EXTERNAL_SIP_TRUNK
+
+# RTP
+-A INPUT -p tcp -m tcp --dport 10000:20000 -m state --state NEW -j INNER_SIP
+-A INPUT -p udp -m udp --dport 10000:20000 -m state --state NEW -j INNER_SIP
+-A INPUT -p udp -m udp --dport 40000:60000 -m state --state NEW -j EXTERNAL_SIP_TRUNK
+# NTP
+-A INPUT -p udp -m udp --dport 123 -m state --state NEW -j INNER_SIP
+
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
