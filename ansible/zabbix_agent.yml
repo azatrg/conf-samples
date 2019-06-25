@@ -1,0 +1,22 @@
+---
+- hosts: dns
+  become: yes
+  tasks:
+    - name: Install zabbix agent
+      yum:
+        name: zabbix30-agent
+        state: present
+
+    - name: Copy zabbix agent config
+      copy:
+        src: /home/azat/playbook/configs/zabbix_agentd.conf
+        dest: /etc/zabbix_agentd.conf
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name:
+      service:
+        name: zabbix-agent
+        enabled: yes
+        state: reloaded

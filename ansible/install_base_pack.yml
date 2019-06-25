@@ -1,0 +1,22 @@
+---
+- hosts: dns
+  become: yes
+  tasks:
+    - name: Install EPEL-Release repo
+      yum:
+        name: epel-release
+        state: present
+
+    - name: Install base packages on CentOS VM
+      yum:
+        name:
+         - vim
+         - mc
+         - curl
+         - wget
+         - iptables-services
+         - ntp
+         - open-vm-tools
+         - htop
+         - tree
+        state: present

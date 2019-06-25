@@ -1,0 +1,36 @@
+---
+- hosts: dns
+  become: yes
+  tasks:
+    - name: create .ssh folder
+      file:
+        path: /home/azat/.ssh
+        state: directory
+        owner: azat
+        group: azat
+        mode: '0700'
+
+    - name: Copy key 
+      copy:
+        src: ~/playbook/ssh/authorized_keys
+        dest: /home/azat/.ssh/authorized_keys
+        mode: '0600'
+        owner: azat
+        group: azat
+
+    - name: Change permissions on home folder
+      file:
+        path: /home/azat
+        state: directory
+        mode: '0700'
+      
+    - name: Copy sshd config
+      copy:
+        src: ~/playbook/ssh/sshd_config
+        dest: /etc/ssh/sshd_config
+        mode: '0600'
+
+    - name: restart sshd service
+      service:
+        name: sshd
+        state: restarted

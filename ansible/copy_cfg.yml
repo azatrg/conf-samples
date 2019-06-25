@@ -1,0 +1,17 @@
+---
+- hosts: dns
+  become: yes
+  tasks:
+    - name: Copy files with multiple changes
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "{{item.mode}}"
+      with_items:
+        - { src: '~/playbook/configs/.bashrc_user', dest: '/home/azat/.bashrc', mode: '0644'}
+        - { src: '~/playbook/configs/.vimrc', dest: '/home/azat/.vimrc', mode: '0644'}
+        - { src: '~/playbook/configs/.vimrc', dest: '/root/.vimrc', mode: '0644'}
+        - { src: '~/playbook/configs/.bashrc_root', dest: '/root/.bashrc', mode: '0644'}
+        - { src: '~/playbook/configs/iptables.sh', dest: '/etc/iptables.sh', mode: '0740'}
+        - { src: '~/playbook/configs/selinux', dest: '/etc/selinux/config', mode: '0644'}
+        - { src: '~/playbook/configs/sysctl', dest: '/etc/sysctl.conf', mode: '0644'}
