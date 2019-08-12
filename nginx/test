@@ -1,0 +1,31 @@
+# Запрет на обращение к серверу по ip-адресу
+server {
+	listen 80 default_server;
+	server_name _;
+	return 444;
+}
+
+# Редирект с www на основное доменное имя
+server {
+	listen 80;
+	server_name www.garaev.pw;
+	return 301 $scheme://garaev.pw$request_uri;
+}
+
+# Остальные настройки
+server {
+	listen 80;
+	server_name garaev.pw;
+	root /var/www/test/public;
+	index index.php;
+
+	# Лог файлы и ошибки для этого сайта
+	access_log /var/log/nginx/test/access.log;
+	error_log /var/log/nginx/test/error.log;
+
+	# Подключение restrictions.conf
+	include /etc/nginx/conf.d/restrictions.conf;
+	# Подключение wordpress.conf
+	include /etc/nginx/conf.d/wordpress.conf;
+}
+
