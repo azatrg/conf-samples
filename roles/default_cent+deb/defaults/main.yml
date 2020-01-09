@@ -1,0 +1,22 @@
+---
+# defaults file for all
+default_user: azat
+
+package_list_apt:
+- mc
+- iptables-persistent
+- htop
+- tree
+- fail2ban
+
+package_list_yum:
+- vim
+- mc
+- curl
+- wget
+- iptables-services
+- ntp
+#          - open-vm-tools
+- htop
+- tree
+- fail2ban

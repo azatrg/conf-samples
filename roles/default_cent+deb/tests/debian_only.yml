@@ -1,0 +1,101 @@
+---
+# tasks file srv 
+#  tasks:
+- name: Create User with sudo group
+  user:
+    name: "{{ default_user }}"
+    password: '$6$PsCu6CM8$2cSCELNQmq12aSSDjso73rcH5hO12aZyDqnftncFkXyu0fMrcy1WuHZ7K0xLb1uxOLK08XVEzFjSaimomRf850'
+    # whell for Centos and sudo for Debian    
+    groups: sudo
+    shell: /bin/bash
+
+- name: create .ssh folder
+  file:
+    path: /home/{{ default_user }}/.ssh
+    state: directory
+    owner: "{{ default_user }}"
+    group: "{{ default_user }}"
+    mode: '0700'
+
+- name: Copy key 
+  copy:
+    src: authorized_keys
+    dest: /home/{{ default_user }}/.ssh/authorized_keys
+    mode: '0600'
+    owner: "{{ default_user }}"
+    group: "{{ default_user }}"
+
+- name: Change permissions on home folder
+  file:
+    path: /home/{{ default_user }}
+    state: directory
+    mode: '0700'
+      
+- name: Copy sshd config
+  copy:
+    src: sshd_config
+    dest: /etc/ssh/sshd_config
+    mode: '0600'
+  notify: restart sshd
+
+  #- name: Install EPEL-Release repo
+  #  yum:  name=epel-release state=present
+
+- name: Update APT  packages
+  apt: name=* state=latest update_cache=yes
+
+  #- name: Install base packages on CentOS VM
+  #  yum:
+  #    name: "{{ package_list }}"
+  #    state: present
+- name: Install base packages on Debian
+  apt:
+   name: "{{ package_list }}"
+   state: present
+
+
+- name: Copy files with multiple changes
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{item.mode}}"
+  with_items:
+    - { src: '.bashrc_user', dest: '/home/{{ default_user }}/.bashrc', mode: '0644'}
+    - { src: '.vimrc', dest: '/home/{{ default_user }}/.vimrc', mode: '0644'}
+    - { src: '.vimrc', dest: '/root/.vimrc', mode: '0644'}
+    - { src: '.bashrc_root', dest: '/root/.bashrc', mode: '0644'}
+           #         - { src: '~/playbook/configs/iptables.sh', dest: '/etc/iptables.sh', mode: '0740'}
+           #    - { src: 'selinux', dest: '/etc/selinux/config', mode: '0644'}
+           #    - { src: 'sysctl', dest: '/etc/sysctl.conf', mode: '0644'}
+    - { src: 'jail.local', dest: '/etc/fail2ban/jail.local', mode: '0644'}
+    - { src: 'sshd.local', dest: '/etc/fail2ban/jail.d/sshd.local', mode: '0644'}
+  notify: restart fail2ban
+
+  #- name: Command to enable sysctl.conf params 
+  #  command: sysctl -p
+
+  #- name: Restart networking to enable changes in sysctl.conf
+  #  service: name=network state=restarted
+
+       #     - name: Set ntpd source
+       #       command: ntpdate pool.ntp.org
+
+       #     - name: Start and enable ntpd service
+       #       service: name=ntpd enabled=yes state=reloaded
+- name: Generate iptables config
+  template: src=iptables.j2 dest=/etc/iptables.sh mode=0740
+  # don't need on debian 
+  notify: restart iptables
+       # no service with this name     -  name: Stop and disable firewalld service
+       #        service: name=firewalld state=stopped enabled=no
+       
+       # 
+       # different path on different OS
+- name: Enable iptables config
+  shell: /etc/iptables.sh
+
+  #- name: Enable and start iptables service
+  #  service: name=iptables state=started enabled=yes
+
+  #- name: Reboot server
+  #  shell: reboot

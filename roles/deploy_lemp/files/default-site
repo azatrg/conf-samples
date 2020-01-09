@@ -1,0 +1,40 @@
+#server {
+#	listen 80 default_server;
+#	server_name _;
+#	return 444;
+#}
+
+#server {
+#	listen 80;
+#	server_name www.garaev.pw garaev.pw;
+#	return 301 https://garaev.pw$request_uri;
+#}
+
+server {
+	listen 80;
+	server_name _;
+	root /var/www/html/;
+	index index.php;
+
+	access_log /var/log/nginx/test/access.log;
+	error_log /var/log/nginx/test/error.log;
+
+	include /etc/nginx/conf.d/restrictions.conf;
+	include /etc/nginx/conf.d/wordpress.conf;
+}
+
+#SSL confguration
+#server {
+#	listen 443 ssl http2;
+#	server_name garaev.pw;
+#
+#        root /var/www/test/public;
+#        index index.php;
+#
+#        access_log /var/log/nginx/test/access.log;
+#        error_log /var/log/nginx/test/error.log;
+#
+#        include /etc/nginx/conf.d/restrictions.conf;
+#        include /etc/nginx/conf.d/wordpress.conf;
+#	include /etc/nginx/conf.d/ssl.conf;
+#}

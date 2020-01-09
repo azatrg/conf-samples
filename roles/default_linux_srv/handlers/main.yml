@@ -1,0 +1,16 @@
+---
+# handlers file for default_linux_srv
+- name: restart sshd
+  service: name=sshd state=restarted
+
+- name: restart network
+  service: name=network state=restarted
+
+- name: restart iptables
+  service: name=iptables state=restarted 
+
+- name: reboot server
+  shell: reboot
+  
+- name: restart fail2ban
+  service: name=fail2ban state=restarted

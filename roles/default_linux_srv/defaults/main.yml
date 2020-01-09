@@ -1,0 +1,15 @@
+---
+# defaults file for default_linux_srv
+default_user: azat
+package_list:
+- vim
+- mc
+- curl
+- wget
+- iptables-services
+- ntp
+#          - open-vm-tools
+- htop
+- tree
+- fail2ban
+- fail2ban-systemd

@@ -1,0 +1,92 @@
+---
+# tasks file for deploy_lemp
+#   tasks:
+- name: Add new repo for mariadb
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{item.mode}}"
+  with_items:
+    - { src: 'MariaDB.repo', dest: '/etc/yum.repos.d/', mode: '0644'}
+
+- name: Add Remi-repo for php
+  get_url:
+    url: 'https://rpms.remirepo.net/enterprise/remi-release-7.rpm'
+    dest: /home/azat/
+- name: Download key for repo
+  get_url:
+    url: 'https://rpms.remirepo.net/RPM-GPG-KEY-remi'
+    dest: /home/azat
+
+
+- name: Execute RPM to install repo    
+  shell: rpm -Uvh /home/azat/remi-release-7.rpm
+- name: Import key
+  shell: rpm --import RPM-GPG-KEY-remi
+
+- name: Install LEMP pack(nginx+php73_with_modules+MariaDB)
+  yum:
+    name: "{{ lemp_pack }}"
+    state: present
+
+- name: Create folders for nginx
+  file:
+    path: /etc/nginx/sites
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+    
+- name: Create folders for nginx html
+  file:
+    path: /var/www/html
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+
+
+- name: Create folders for nginx log
+  file:
+    path: /var/log/nginx/test
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copy configs for nginx, php, maridb
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{item.mode}}"
+  with_items:
+    - { src: 'nginx.conf', dest: '/etc/nginx/nginx.conf', mode: '0644'}
+    - { src: 'default-site', dest: '/etc/nginx/sites/default-site', mode: '0644'}
+    - { src: 'ssl.conf', dest: '/etc/nginx/conf.d/ssl.conf', mode: '0644'}
+    - { src: 'wordpress.conf', dest: '/etc/nginx/conf.d/wordpress.conf', mode: '0644'}
+    - { src: 'restrictions.conf', dest: '/etc/nginx/conf.d/restrictions.conf', mode: '0644'}
+    - { src: 'www.conf', dest: '/etc/opt/remi/php73/php-fpm.d/www.conf', mode: '0644'}
+    - { src: 'index.php', dest: '/var/www/html/index.php', mode: '0644'}
+
+- name: Enable and start nginx
+  service: name=nginx state=started enabled=yes
+
+- name: Enable and start php-fpm
+  service: name=php73-php-fpm state=started enabled=yes
+
+- name: Enable and start mariadb
+  service: name=mariadb state=started enabled=yes
+
+
+
+- name: Generate iptables config
+  template: src=iptables.j2 dest=/etc/iptables.sh mode=0740
+  #  notify: restart iptables
+       # no service with this name     -  name: Stop and disable firewalld service
+       #        service: name=firewalld state=stopped enabled=no
+
+- name: Enable iptables config
+  shell: /etc/iptables.sh
+
+- name: Enable and start iptables service
+  service: name=iptables state=started enabled=yes
